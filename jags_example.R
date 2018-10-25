@@ -1,8 +1,10 @@
+## Checks to see if package rjags is installed. if it is not, package is installed and loaded
 rm(list = ls())
 if (!"rjags" %in% installed.packages()) install.packages("rjags")
 library(rjags)
 
-working_directory = '/Users/quinn/Dropbox/Research/PINEMAP/GY_DA/growth_yield_da'
+## Changes working directory and reads in data
+working_directory = '/john/home/'
 setwd(working_directory)
 
 #--Observed Data---------------------------------
@@ -25,9 +27,11 @@ for(i in 2:length(observations$PlotID)){
     plot_index = plot_index + 1
   }
 }
+## Creates vector to store plotlist
 plotlist = unique(observations$PlotID)
 plotlist_multi_measure = rep(0,length(plotlist))
 
+## Checks to see which plotlists have multiple measurements, stores binary response in plotlist_multi_measure
 for(i in 1:length(plotlist)){
   tmp = length(observations$PlotID[which(observations$PlotID == plotlist[i])])
   if(tmp > 1){
@@ -36,13 +40,19 @@ for(i in 1:length(plotlist)){
 }
 
 #PROCESS DATA TO FORMAT FOR BUGS
+
+## Sets plots to be the PlotIDs that have multiple measurements
 plots = plotlist[which(plotlist_multi_measure == 1)]
+## Sets observations to be the observations from the csv that are have PlotIDs that have multiple measurements
 observations =  observations[observations$PlotID %in% plots, ]
+## Sets n.plots to be the number of unique plots w multiple measurements
 n.plots = length(unique(plots))
+## Determines earliest and latest years from the (now subsetted) observations, creates year sequence and determines length
 earliest = min(observations$YearMeas)
 latest = max(observations$YearMeas)
 years = seq(earliest,latest,1)
 n.years=length(years)
+## Initializes basal area vectors, age, nobs, start and end year
 BA.int = rep(NA,n.plots)
 BA.int.meas.error = rep(NA,n.plots)
 BA.int.sample.error = rep(NA,n.plots)
@@ -94,9 +104,11 @@ for(plotnum in 1:n.plots){
   }
 }
 
-sample.error[4,nobs[4]] = sample.error[4,nobs[4]]#*10
+## Sets sample error for plot4 to be 10 times greater
+sample.error[4,nobs[4]] = sample.error[4,nobs[4]]*10
 #nobs[4]=0
 
+## Reads in bugs model using sink function
 sink("gy.bug")
 cat('model {
       #loop through the plots
